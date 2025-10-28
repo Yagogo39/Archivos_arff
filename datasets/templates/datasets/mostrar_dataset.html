@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Cargar archivo ARFF</title>
+    <style>
+        body {
+            background-color: #f6f8fa;
+            font-family: "Segoe UI", Roboto, Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            color: #222;
+        }
+
+        h2 {
+            text-align: center;
+            color: #1a237e;
+            font-weight: 600;
+        }
+
+        form {
+            background: #fff;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            background-color: #1a237e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background-color: #283593;
+        }
+
+        .alert {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #e3f2fd;
+            border-left: 5px solid #64b5f6;
+            color: #0d47a1;
+        }
+
+        h4 {
+            text-align: center;
+            margin-top: 40px;
+            color: #1a237e;
+        }
+
+        .table-container {
+            max-width: 95%;
+            margin: 20px auto;
+            overflow-x: auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #1a237e;
+            color: white;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tr:hover {
+            background-color: #e8eaf6;
+        }
+
+        /* 💡 Resalta la columna final (suele ser la clase o etiqueta) */
+        td:last-child {
+            font-weight: 600;
+            color: #0d47a1;
+        }
+    </style>
+</head>
+<body>
+    <h2>📂 Cargar y visualizar archivo ARFF</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Cargar archivo</button>
+    </form>
+
+    {% if mensaje %}
+        <div class="alert">{{ mensaje }}</div>
+    {% endif %}
+
+    {% if df_html %}
+        <h4>Vista previa del DataFrame (primeras 100 filas)</h4>
+        <div class="table-container">
+            {{ df_html|safe }}
+        </div>
+    {% endif %}
+</body>
+</html>
