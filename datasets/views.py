@@ -1,59 +1,127 @@
-from django.shortcuts import render
+import os
 import pandas as pd
+import matplotlib.pyplot as plt
+from django.shortcuts import render
+from django.core.files.storage import FileSystemStorage
+from django.http import HttpResponse
+from io import BytesIO
+import base64
 import arff
-import io
-import re
-from .forms import UploadFileForm
+from sklearn.model_selection import train_test_split
 
-def cargar_arff(request):
-    df_html = None
-    mensaje = ""
 
-    if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            archivo = request.FILES['archivo']
+def home(request):
+    context = {}
+    
+    # === Subir archivo ===
+    if request.method == 'POST' and request.FILES.get('file'):
+        uploaded_file = request.FILES['file']
+        fs = FileSystemStorage(location='datasets/')
+        file_path = fs.save(uploaded_file.name, uploaded_file)
+        full_path = os.path.join('datasets', file_path)
 
-            if not archivo.name.lower().endswith('.arff'):
-                mensaje = "Solo se permiten archivos con extensión .arff"
-            else:
-                try:
-                    # 🔹 Leer el archivo subido y decodificar
-                    contenido = archivo.read().decode('utf-8', errors='ignore')
+        try:
+            # --- Limpieza previa del archivo ---
+            with open(full_path, 'r') as f:
+                content = f.read()
+                # Eliminar comillas simples dentro de atributos { 'X', 'Y' }
+                content = content.replace("'{", "{").replace("}'", "}").replace("'", "")
+            
+            # Crear versión limpia temporal
+            temp_path = full_path + "_clean.arff"
+            with open(temp_path, 'w') as temp:
+                temp.write(content)
 
-                    # 🔹 Limpiar comillas de nombres de atributos
-                    contenido = re.sub(r"@attribute\s+'([^']+)'", r"@ATTRIBUTE \1", contenido, flags=re.IGNORECASE)
+            # --- Cargar el archivo ARFF limpio ---
+            with open(temp_path, 'r') as f:
+                dataset = arff.load(f)
+                attributes = [attr[0] for attr in dataset['attributes']]
+                df = pd.DataFrame(dataset['data'], columns=attributes)
 
-                    # 🔹 Limpiar los tipos de atributos que liac-arff no reconoce
-                    contenido = re.sub(r'@ATTRIBUTE\s+(\S+)\s+symbolic', r'@ATTRIBUTE \1 STRING', contenido, flags=re.IGNORECASE)
-                    contenido = re.sub(r'@ATTRIBUTE\s+(\S+)\s+real', r'@ATTRIBUTE \1 NUMERIC', contenido, flags=re.IGNORECASE)
-                    contenido = re.sub(r'@ATTRIBUTE\s+(\S+)\s+integer', r'@ATTRIBUTE \1 NUMERIC', contenido, flags=re.IGNORECASE)
+            # Guardar la ruta del dataset en la sesión
+            request.session['dataset_path'] = temp_path
 
-                    # 🔹 Limpiar espacios y comillas dentro de los valores nominales
-                    contenido = re.sub(
-                        r"\{([^\}]+)\}",
-                        lambda m: "{" + ",".join([v.strip().strip("'") for v in m.group(1).split(',')]) + "}",
-                        contenido
-                    )
+            context['mensaje'] = f"Archivo {uploaded_file.name} cargado correctamente."
+            context['df_html'] = df.head(100).to_html(classes='table table-striped', index=False)
 
-                    # 🔹 Cargar el ARFF con liac-arff
-                    dataset = arff.load(io.StringIO(contenido))
+        except Exception as e:
+            context['mensaje'] = f"Error al leer el archivo: {e}"
 
-                    # 🔹 Extraer nombres de atributos y datos
-                    atributos = [attr[0] for attr in dataset['attributes']]
-                    df = pd.DataFrame(dataset['data'], columns=atributos)
+    # === Mostrar DataFrame ===
+    elif 'mostrar_df' in request.POST:
+        full_path = request.session.get('dataset_path')
+        if full_path and os.path.exists(full_path):
+            with open(full_path, 'r') as f:
+                dataset = arff.load(f)
+                attributes = [attr[0] for attr in dataset['attributes']]
+                df = pd.DataFrame(dataset['data'], columns=attributes)
+            context['mensaje'] = "Vista previa del DataFrame (100 filas):"
+            context['df_html'] = df.head(100).to_html(classes='table table-striped', index=False)
 
-                    # 🔹 Convertir las primeras 100 filas a HTML
-                    df_html = df.head(100).to_html(classes="table table-striped", index=False)
-                    mensaje = f"Archivo ARFF '{archivo.name}' cargado correctamente. ({df.shape[0]} filas, {df.shape[1]} columnas)"
+    # === Particionar Dataset ===
+    elif 'particionar' in request.POST:
+        full_path = request.session.get('dataset_path')
+        if full_path and os.path.exists(full_path):
+            with open(full_path, 'r') as f:
+                dataset = arff.load(f)
+                attributes = [attr[0] for attr in dataset['attributes']]
+                df = pd.DataFrame(dataset['data'], columns=attributes)
 
-                except Exception as e:
-                    mensaje = f"Error al leer el archivo: {e}"
-    else:
-        form = UploadFileForm()
+            # Partición del dataset (60/20/20)
+            train_set, test_set = train_test_split(df, test_size=0.4, random_state=42)
+            val_set, test_set = train_test_split(test_set, test_size=0.5, random_state=42)
 
-    return render(request, 'datasets/mostrar_dataset.html', {
-        'form': form,
-        'df_html': df_html,
-        'mensaje': mensaje
-    })
+            # Guardar CSVs
+            train_path = 'datasets/train_set.csv'
+            val_path = 'datasets/val_set.csv'
+            test_path = 'datasets/test_set.csv'
+
+            train_set.to_csv(train_path, index=False)
+            val_set.to_csv(val_path, index=False)
+            test_set.to_csv(test_path, index=False)
+
+            # --- Crear gráficas ---
+            img_list = []
+            for title, data in [
+                ('DataSet Completo', df),
+                ('Train Set', train_set),
+                ('Validación', val_set),
+                ('Test Set', test_set)
+            ]:
+                if 'protocol_type' in data.columns:
+                    fig, ax = plt.subplots()
+                    data['protocol_type'].value_counts().plot(kind='bar', ax=ax)
+                    ax.set_title(title)
+                    buf = BytesIO()
+                    plt.tight_layout()
+                    plt.savefig(buf, format='png')
+                    plt.close(fig)
+                    img_base64 = base64.b64encode(buf.getvalue()).decode('utf-8')
+                    img_list.append(img_base64)
+
+            context.update({
+                'mensaje': "Partición completada correctamente.",
+                'graficas': img_list,
+                'train_csv': train_path,
+                'val_csv': val_path,
+                'test_csv': test_path
+            })
+
+    return render(request, 'datasets/mostrar_dataset.html', context)
+
+
+def descargar_csv(request, tipo):
+    """Permite descargar las particiones generadas en CSV."""
+    file_map = {
+        'train': 'datasets/train_set.csv',
+        'val': 'datasets/val_set.csv',
+        'test': 'datasets/test_set.csv'
+    }
+    path = file_map.get(tipo)
+    if not path or not os.path.exists(path):
+        return HttpResponse("Archivo no encontrado.", status=404)
+
+    with open(path, 'rb') as f:
+        response = HttpResponse(f.read(), content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="%s_set.csv"' % tipo
+        return response
