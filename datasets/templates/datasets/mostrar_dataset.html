@@ -5,7 +5,7 @@
     <title>ARFF | Division</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: Tahoma, Geneva, Verdana, sans-serif;
             background-color: #000000;
             color: #ffffff;
             padding: 40px 20px;
@@ -46,7 +46,7 @@
             border: 1px solid #333;
         }
         .info-box strong {
-            color: #007bff;
+            color: #e2a128;
             display: block;
             margin-bottom: 5px;
             font-size: 1.1rem;
@@ -65,26 +65,25 @@
             display: none;
         }
         .custom-file-upload {
-            border: 2px solid #007bff;
-            color: #007bff;
+            border: 2px solid #e2a128;
+            color: #e2a128;
             padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
             transition: background-color 0.3s, color 0.3s;
             margin-bottom: 10px;
             font-weight: 500;
-            background-color: #000000; /* Fondo para el botón de archivo */
+            background-color: #000000;
         }
         .custom-file-upload:hover {
-            background-color: #001f40; /* Fondo oscuro al pasar el mouse */
+            background-color: #402600;
         }
         #file-name {
-            color: #ccc !important; /* Asegurar que el nombre del archivo sea visible */
+            color: #ccc !important;
         }
 
-        /* Botones */
         .btn {
-            background-color: #007bff;
+            background-color: #e2a128;
             color: white;
             border: none;
             padding: 12px 25px;
@@ -94,36 +93,19 @@
             font-size: 1rem;
             font-weight: 600;
             transition: background-color 0.3s, transform 0.1s;
-            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
         }
         .btn:hover {
-            background-color: #0056b3;
+            background-color: #e2a128;
             transform: translateY(-1px);
         }
         .btn-success {
-             background-color: #28a745;
-             box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+             background-color: #e2a128;
         }
         .btn-success:hover {
-             background-color: #1e7e34;
+             background-color: #e2a128;
         }
 
-        /* Alertas y Mensajes */
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 25px;
-            text-align: center;
-            font-weight: 500;
-        }
-        .alert-info {
-            background-color: #003366; /* Fondo oscuro para info */
-            color: #b3e5fc;
-            border: 1px solid #004c99;
-        }
-        /* NOTA: No hay alerta-success en este ejemplo, pero mantendría colores claros para el texto. */
 
-        /* Visualización de Datos (Tabla) - AJUSTES PARA MODO OSCURO */
         .data-visualization-section {
             margin-top: 40px;
         }
@@ -131,7 +113,7 @@
             max-height: 500px;
             overflow-y: auto;
             overflow-x: auto;
-            border: 1px solid #333; /* Borde oscuro */
+            border: 1px solid #333;
             border-radius: 8px;
         }
         table {
@@ -141,25 +123,24 @@
             min-width: 800px;
         }
         th {
-            background-color: #007bff;
+            background-color: #e2a128;
             color: white;
             position: sticky;
             top: 0;
             z-index: 10;
         }
         td {
-            color: #ccc; /* Texto de la celda claro */
+            color: #ccc;
         }
         th, td {
             padding: 12px 15px;
             text-align: left;
-            border-bottom: 1px solid #444; /* Línea divisoria oscura */
         }
         tr:nth-child(even) {
-            background-color: #1a1a1a; /* Rayado muy oscuro */
+            background-color: #1a1a1a;
         }
         tr:hover {
-            background-color: #003366; /* Resaltar al pasar el mouse */
+            background-color: #e2a128;
         }
 
         .descargas {
@@ -171,7 +152,7 @@
         .descargas a {
             text-decoration: none;
             display: inline-block;
-            background: #28a745;
+            background: #e2a128;
             color: white;
             padding: 10px 20px;
             border-radius: 8px;
@@ -180,7 +161,7 @@
             transition: background 0.3s;
         }
         .descargas a:hover {
-            background: #1e7e34;
+            background: #e2a128;
         }
     </style>
 </head>
@@ -238,14 +219,23 @@
         <div style="text-align:center; margin-bottom: 20px;">
             <form method="post">
                 {% csrf_token %}
-                <button name="particionar" type="submit" class="btn btn-success">✂️ Particionar Dataset</button>
+                <button name="particionar" type="submit" class="btn btn-success">Particionar Dataset</button>
             </form>
         </div>
 
-        {% if particion_realizada %} <div class="descargas">
+        {% if particion_realizada %} 
+        <div class="descargas">
              <h4 style="color: #ffffff; margin-bottom: 15px;">Resultados de la Partición</h4>
-             <a href="#" class="btn-download">Descargar Training Set</a>
-             <a href="#" class="btn-download">Descargar Testing Set</a>
+             <p style="color: #ccc; margin-bottom: 20px;">
+                <li>Total: <b>{{total_datos}}</b> registros</li>
+                <li>Entrenamiento: <b>{{ train_len }}</b> registros </li>
+                <li>Validación: <b>{{ val_len }}</b> registros </li>
+                <li>Pruebas: <b>{{ test_len }}</b> registros </li>
+                
+             </p>
+             <a href="{% url 'descargar_csv' tipo='train' %}" class="btn-success">Descargar Entrenamiento</a>
+             <a href="{% url 'descargar_csv' tipo='val' %}" class="btn-success">Descargar Validacion</a>
+             <a href="{% url 'descargar_csv' tipo='test' %}" class="btn-success">Descargar Test</a>
         </div>
         {% endif %}
     </div>
