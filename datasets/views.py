@@ -13,7 +13,6 @@ from sklearn.model_selection import train_test_split
 def home(request):
     context = {}
     
-    # === Subir archivo ===
     if request.method == 'POST' and request.FILES.get('file'):
         uploaded_file = request.FILES['file']
         fs = FileSystemStorage(location='datasets/')
@@ -21,24 +20,19 @@ def home(request):
         full_path = os.path.join('datasets', file_path)
 
         try:
-            # --- Limpieza previa del archivo ---
             with open(full_path, 'r') as f:
                 content = f.read()
-                # Eliminar comillas simples dentro de atributos { 'X', 'Y' }
                 content = content.replace("'{", "{").replace("}'", "}").replace("'", "")
-            
-            # Crear versión limpia temporal
+ 
             temp_path = full_path + "_clean.arff"
             with open(temp_path, 'w') as temp:
                 temp.write(content)
 
-            # --- Cargar el archivo ARFF limpio ---
             with open(temp_path, 'r') as f:
                 dataset = arff.load(f)
                 attributes = [attr[0] for attr in dataset['attributes']]
                 df = pd.DataFrame(dataset['data'], columns=attributes)
 
-            # Guardar la ruta del dataset en la sesión
             request.session['dataset_path'] = temp_path
 
             context['mensaje'] = f"Archivo {uploaded_file.name} cargado correctamente."
@@ -47,7 +41,6 @@ def home(request):
         except Exception as e:
             context['mensaje'] = f"Error al leer el archivo: {e}"
 
-    # === Mostrar DataFrame ===
     elif 'mostrar_df' in request.POST:
         full_path = request.session.get('dataset_path')
         if full_path and os.path.exists(full_path):
@@ -55,10 +48,9 @@ def home(request):
                 dataset = arff.load(f)
                 attributes = [attr[0] for attr in dataset['attributes']]
                 df = pd.DataFrame(dataset['data'], columns=attributes)
-            context['mensaje'] = "Vista previa del DataFrame (100 filas):"
-            context['df_html'] = df.head(100).to_html(classes='table table-striped', index=False)
+            context['mensaje'] = "Vista del DataFrame:"
+            context['df_html'] = df.head(10).to_html(classes='table table-striped', index=False)
 
-    # === Particionar Dataset ===
     elif 'particionar' in request.POST:
         full_path = request.session.get('dataset_path')
         if full_path and os.path.exists(full_path):
@@ -67,11 +59,9 @@ def home(request):
                 attributes = [attr[0] for attr in dataset['attributes']]
                 df = pd.DataFrame(dataset['data'], columns=attributes)
 
-            # Partición del dataset (60/20/20)
             train_set, test_set = train_test_split(df, test_size=0.4, random_state=42)
             val_set, test_set = train_test_split(test_set, test_size=0.5, random_state=42)
 
-            # Guardar CSVs
             train_path = 'datasets/train_set.csv'
             val_path = 'datasets/val_set.csv'
             test_path = 'datasets/test_set.csv'
@@ -80,7 +70,6 @@ def home(request):
             val_set.to_csv(val_path, index=False)
             test_set.to_csv(test_path, index=False)
 
-            # --- Crear gráficas ---
             img_list = []
             for title, data in [
                 ('DataSet Completo', df),
@@ -111,7 +100,6 @@ def home(request):
 
 
 def descargar_csv(request, tipo):
-    """Permite descargar las particiones generadas en CSV."""
     file_map = {
         'train': 'datasets/train_set.csv',
         'val': 'datasets/val_set.csv',

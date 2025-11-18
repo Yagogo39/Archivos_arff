@@ -2,102 +2,182 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Cargar y visualizar archivo ARFF</title>
+    <title>ARFF | Division</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            color: #222;
-            padding: 30px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            padding: 40px 20px;
         }
         .container {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-            max-width: 1000px;
+            background: #000000;
+            padding: 30px;
+            max-width: 1200px;
             margin: auto;
+            transition: all 0.3s ease;
         }
+
         h2, h3, h4 {
             text-align: center;
-            color: #333;
+            color: #ffffff;
+            font-weight: 600;
+            margin-bottom: 5px;
         }
-        form {
-            text-align: center;
-            margin-bottom: 20px;
+        h3, h4 {
+             font-weight: 300;
+             font-size: 1.2rem;
+        }
+
+        .content-columns {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+        .info-box {
+            flex: 1;
+            background-color: #1a1a1a;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
+            color: #ccc;
+            text-align: left;
+            border: 1px solid #333;
+        }
+        .info-box strong {
+            color: #007bff;
+            display: block;
+            margin-bottom: 5px;
+            font-size: 1.1rem;
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            background-color: #2e2f30;
         }
         input[type="file"] {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            background: #fafafa;
+            display: none;
         }
+        .custom-file-upload {
+            border: 2px solid #007bff;
+            color: #007bff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s, color 0.3s;
+            margin-bottom: 10px;
+            font-weight: 500;
+            background-color: #000000; /* Fondo para el botón de archivo */
+        }
+        .custom-file-upload:hover {
+            background-color: #001f40; /* Fondo oscuro al pasar el mouse */
+        }
+        #file-name {
+            color: #ccc !important; /* Asegurar que el nombre del archivo sea visible */
+        }
+
+        /* Botones */
         .btn {
-            background: #007bff;
+            background-color: #007bff;
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
+            padding: 12px 25px;
+            border-radius: 8px;
             cursor: pointer;
-            margin: 5px;
+            margin: 10px 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.1s;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
         }
         .btn:hover {
-            background: #0056b3;
+            background-color: #0056b3;
+            transform: translateY(-1px);
         }
+        .btn-success {
+             background-color: #28a745;
+             box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+        }
+        .btn-success:hover {
+             background-color: #1e7e34;
+        }
+
+        /* Alertas y Mensajes */
         .alert {
-            background: #e1f5fe;
-            padding: 10px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
             text-align: center;
+            font-weight: 500;
+        }
+        .alert-info {
+            background-color: #003366; /* Fondo oscuro para info */
+            color: #b3e5fc;
+            border: 1px solid #004c99;
+        }
+        /* NOTA: No hay alerta-success en este ejemplo, pero mantendría colores claros para el texto. */
+
+        /* Visualización de Datos (Tabla) - AJUSTES PARA MODO OSCURO */
+        .data-visualization-section {
+            margin-top: 40px;
         }
         .table-container {
-            margin-top: 20px;
+            max-height: 500px;
+            overflow-y: auto;
             overflow-x: auto;
+            border: 1px solid #333; /* Borde oscuro */
+            border-radius: 8px;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.9rem;
-        }
-        table, th, td {
-            border: 1px solid #ddd;
+            font-size: 0.85rem;
+            min-width: 800px;
         }
         th {
             background-color: #007bff;
             color: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
-        td, th {
-            padding: 8px;
+        td {
+            color: #ccc; /* Texto de la celda claro */
+        }
+        th, td {
+            padding: 12px 15px;
             text-align: left;
+            border-bottom: 1px solid #444; /* Línea divisoria oscura */
         }
         tr:nth-child(even) {
-            background-color: #f2f2f2;
+            background-color: #1a1a1a; /* Rayado muy oscuro */
         }
-        .graficas {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 25px;
+        tr:hover {
+            background-color: #003366; /* Resaltar al pasar el mouse */
         }
-        .graficas img {
-            margin: 10px;
-            border-radius: 10px;
-            max-width: 45%;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
+
         .descargas {
             text-align: center;
-            margin-top: 20px;
+            padding: 20px 0;
+            border-top: 1px solid #333;
+            margin-top: 30px;
         }
         .descargas a {
             text-decoration: none;
             display: inline-block;
             background: #28a745;
             color: white;
-            padding: 8px 15px;
-            border-radius: 6px;
-            margin: 5px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 0 10px;
+            font-weight: 600;
+            transition: background 0.3s;
         }
         .descargas a:hover {
             background: #1e7e34;
@@ -106,44 +186,68 @@
 </head>
 <body>
     <div class="container">
-        <h2>Cargar y visualizar archivo ARFF</h2>
+        <h2>Division del DataSet</h2>
 
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            <input type="file" name="file" required>
-            <button type="submit" class="btn">Cargar</button>
-        </form>
+        <h4>Se debe separar el DataSet en los diferentes subconjuntos necesarios para realizar los procesos de entrenamiento, validacion y pruebas. Sklearn implementa la funcion split_train_test.</h4>
 
-        {% if mensaje %}
-            <div class="alert">{{ mensaje }}</div>
-        {% endif %}
+        <div class="content-columns">
+            <div class="info-box">
+                <strong>Subconjuntos</strong>
+                <p>La división más común es en Entrenamiento, Validación y Pruebas. Esto asegura que el modelo se pruebe con datos que nunca ha visto.</p>
+                <ul>
+                    <li><b>Entrenamiento.</b>Se usa para ajustar los parámetros y pesos del modelo.</li>
+                    <li><b>Validacion.</b>Se usa para evaluar el rendimiento del modelo durante la fase de entrenamiento, ayudando a ajustar y optimizar el modelo.</li>
+                    <li><b>Pruebas.</b>Se usa al final, para una evaluación imparcial del rendimiento final.</li>
+                </ul>
+            </div>
+            <div class="info-box">
+                <strong>Shuffle y Stratify</strong>
+                <p>Sklearn implementa la funcion train_test_split, sin embargo esta funcion por defecto realiza un particionado del DataSet aleatorio para cada vez que se ejecuta el script.Aun agregando una semilla fija y"aleatoria", cada vez que se cargue de nuevo el DataSet se generan nuevos subconjuntos esto puede ocacionar que despues de muchos intentos "vea" todo el DataSet.</p>
 
-        {% if df_html %}
-        <div style="text-align:center;">
-            <form method="post">
+                <li><b>Shuffle.</b>Proceso de reordenar aleatoriamente los registros dentro de un conjunto de datos</li>
+                <li><b>Stratify.</b>Dividir un conjunto de datos grande y heterogeneo en subgrupos mas pequeños y homogeneos.</li>
+            </div>
+        </div>
+
+        <div class="upload-section">
+            <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                <button name="particionar" type="submit" class="btn">Particionar Dataset</button>
+                <label for="file-upload" class="custom-file-upload">
+                    Seleccionar Archivo (.arff)
+                </label>
+                <input id="file-upload" type="file" name="file" required onchange="document.getElementById('file-name').innerText = this.files[0].name">
+                <span id="file-name" style="margin-left: 15px; color: #ccc;">No se ha seleccionado ningún archivo.</span>
+                <button type="submit" class="btn">🚀 Cargar Dataset</button>
             </form>
         </div>
 
-        <div class="table-container">
-            {{ df_html|safe }}
+        {% if mensaje %}
+            <div class="alert alert-info">{{ mensaje }}</div>
+        {% endif %}
+
+        {% if df_html %}
+        <div class="data-visualization-section">
+            <h3 style="margin-top: 0;">Vista Previa del Dataset Cargado</h3>
+
+            <div class="table-container">
+                {{ df_html|safe }}
+            </div>
         </div>
         {% endif %}
 
-        <!-- {% if graficas %}
-            <h3>Distribución de 'protocol_type'</h3>
-            <div class="graficas">
-                {% for img in graficas %}
-                    <img src="data:image/png;base64,{{ img }}" alt="grafica">
-                {% endfor %}
-            </div>
-            <div class="descargas">
-                <a href="{% url 'descargar_csv' 'train' %}">Descargar Train</a>
-                <a href="{% url 'descargar_csv' 'val' %}">Descargar Validación</a>
-                <a href="{% url 'descargar_csv' 'test' %}">Descargar Test</a>
-            </div>
-        {% endif %} -->
+        <div style="text-align:center; margin-bottom: 20px;">
+            <form method="post">
+                {% csrf_token %}
+                <button name="particionar" type="submit" class="btn btn-success">✂️ Particionar Dataset</button>
+            </form>
+        </div>
+
+        {% if particion_realizada %} <div class="descargas">
+             <h4 style="color: #ffffff; margin-bottom: 15px;">Resultados de la Partición</h4>
+             <a href="#" class="btn-download">Descargar Training Set</a>
+             <a href="#" class="btn-download">Descargar Testing Set</a>
+        </div>
+        {% endif %}
     </div>
 </body>
 </html>
